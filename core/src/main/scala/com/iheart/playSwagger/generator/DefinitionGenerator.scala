@@ -64,15 +64,16 @@ final case class DefinitionGenerator(
   }
 
   def definition: ParametricType => Definition = {
-    case parametricType @ ParametricType(tpe, reifiedTypeName, _, _) =>
-      val properties = definitionProperties(parametricType, tpe)
+    case parametricType @ ParametricType(_, reifiedTypeName, _, _) =>
+      val properties = definitionProperties(parametricType)
       Definition(
         name = reifiedTypeName,
         properties = properties
       )
   }
 
-  private def definitionProperties(parametricType: ParametricType, tpe: Type) = {
+  private def definitionProperties(parametricType: ParametricType) = {
+    val tpe = parametricType.tpe
     if (swaggerPlayJava) {
       definitionForPOJO(tpe)
     } else {
