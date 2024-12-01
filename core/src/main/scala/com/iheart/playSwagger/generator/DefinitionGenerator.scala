@@ -72,10 +72,6 @@ final case class DefinitionGenerator(
     val tpe = parametricType.tpe
     if (swaggerPlayJava) return definitionForPOJO(tpe)
 
-    val fields = tpe.decls.collectFirst {
-      case m: MethodSymbol if m.isPrimaryConstructor => m
-    }.toList.flatMap(_.paramLists).headOption.getOrElse(Nil)
-
     val paramDescriptions = if (embedScaladoc) {
       val scaladoc = for {
         annotation <- tpe.typeSymbol.annotations
@@ -102,7 +98,9 @@ final case class DefinitionGenerator(
       Map.empty[String, String]
     }
 
-    fields.map { field: Symbol =>
+    tpe.decls.collectFirst {
+      case m: MethodSymbol if m.isPrimaryConstructor => m
+    }.toList.flatMap(_.paramLists).headOption.getOrElse(Nil).map { field: Symbol =>
       // TODO: find a better way to get the string representation of typeSignature
       val name = namingConvention(field.name.decodedName.toString)
 
