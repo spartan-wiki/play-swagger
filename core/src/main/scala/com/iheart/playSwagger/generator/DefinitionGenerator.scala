@@ -66,6 +66,7 @@ final case class DefinitionGenerator(
   private def definition(pt: ParametricType) = Definition(
     name = pt.reifiedTypeName,
     properties = definitionProperties(pt),
+    description = Some("Future description")
   )
 
   private def definitionProperties(parametricType: ParametricType) = {
