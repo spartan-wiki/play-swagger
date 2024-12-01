@@ -63,13 +63,10 @@ final case class DefinitionGenerator(
     case _ => new Text("")
   }
 
-  def definition(pt: ParametricType): Definition = {
-    val properties = definitionProperties(pt)
-    Definition(
-      name = pt.reifiedTypeName,
-      properties = properties
-    )
-  }
+  private def definition(pt: ParametricType) = Definition(
+    name = pt.reifiedTypeName,
+    properties = definitionProperties(pt),
+  )
 
   private def definitionProperties(parametricType: ParametricType) = {
     val tpe = parametricType.tpe
