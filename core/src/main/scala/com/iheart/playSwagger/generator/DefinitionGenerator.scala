@@ -65,58 +65,61 @@ final case class DefinitionGenerator(
 
   def definition: ParametricType => Definition = {
     case parametricType @ ParametricType(tpe, reifiedTypeName, _, _) =>
-      val properties = if (swaggerPlayJava) {
-        definitionForPOJO(tpe)
-      } else {
-        val fields = tpe.decls.collectFirst {
-          case m: MethodSymbol if m.isPrimaryConstructor => m
-        }.toList.flatMap(_.paramLists).headOption.getOrElse(Nil)
-
-        val paramDescriptions = if (embedScaladoc) {
-          val scaladoc = for {
-            annotation <- tpe.typeSymbol.annotations
-            if typeOf[Scaladoc] == annotation.tree.tpe
-            value <- annotation.tree.children.tail.headOption
-            docTree <- value.children.tail.headOption
-            docString = docTree.toString().tail.init.replace("\\n", "\n")
-            doc <- ScaladocParser.parse(docString)
-          } yield doc
-
-          (for {
-            doc <- scaladoc
-            paragraph <- doc.para
-            term <- paragraph.terms
-            tag <- term match {
-              case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) =>
-                Some(key -> text)
-              case _ => None
-            }
-          } yield tag).map {
-            case (name, term) => name -> scalaDocToMarkdown(term).toString
-          }.toMap
-        } else {
-          Map.empty[String, String]
-        }
-
-        fields.map { field: Symbol =>
-          // TODO: find a better way to get the string representation of typeSignature
-          val name = namingConvention(field.name.decodedName.toString)
-
-          val rawTypeName = dealiasParams(field.typeSignature).toString match {
-            case refinedTypePattern(_) => field.info.dealias.typeArgs.head.toString
-            case v => v
-          }
-          val typeName = parametricType.resolve(rawTypeName)
-          // passing None for 'fixed' and 'default' here, since we're not dealing with route parameters
-          val param = Parameter(name, typeName, None, None)
-          mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
-        }
-      }
-
+      val properties = definitionProperties(parametricType, tpe)
       Definition(
         name = reifiedTypeName,
         properties = properties
       )
+  }
+
+  private def definitionProperties(parametricType: ParametricType, tpe: Type) = {
+    if (swaggerPlayJava) {
+      definitionForPOJO(tpe)
+    } else {
+      val fields = tpe.decls.collectFirst {
+        case m: MethodSymbol if m.isPrimaryConstructor => m
+      }.toList.flatMap(_.paramLists).headOption.getOrElse(Nil)
+
+      val paramDescriptions = if (embedScaladoc) {
+        val scaladoc = for {
+          annotation <- tpe.typeSymbol.annotations
+          if typeOf[Scaladoc] == annotation.tree.tpe
+          value <- annotation.tree.children.tail.headOption
+          docTree <- value.children.tail.headOption
+          docString = docTree.toString().tail.init.replace("\\n", "\n")
+          doc <- ScaladocParser.parse(docString)
+        } yield doc
+
+        (for {
+          doc <- scaladoc
+          paragraph <- doc.para
+          term <- paragraph.terms
+          tag <- term match {
+            case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) =>
+              Some(key -> text)
+            case _ => None
+          }
+        } yield tag).map {
+          case (name, term) => name -> scalaDocToMarkdown(term).toString
+        }.toMap
+      } else {
+        Map.empty[String, String]
+      }
+
+      fields.map { field: Symbol =>
+        // TODO: find a better way to get the string representation of typeSignature
+        val name = namingConvention(field.name.decodedName.toString)
+
+        val rawTypeName = dealiasParams(field.typeSignature).toString match {
+          case refinedTypePattern(_) => field.info.dealias.typeArgs.head.toString
+          case v => v
+        }
+        val typeName = parametricType.resolve(rawTypeName)
+        // passing None for 'fixed' and 'default' here, since we're not dealing with route parameters
+        val param = Parameter(name, typeName, None, None)
+        mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
+      }
+    }
   }
 
   private def definitionForPOJO(tpe: Type): Seq[SwaggerParameter] = {
