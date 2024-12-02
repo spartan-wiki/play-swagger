@@ -101,9 +101,9 @@ final case class DefinitionGenerator(
     mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
   }
 
-  private def buildParamDescriptions(tpe: Type) = {
-    if (embedScaladoc) {
-      val scaladoc = for {
+  private def buildParamDescriptions(tpe: Type): Map[String, String] = {
+    if (!embedScaladoc) return Map.empty[String, String]
+    val scaladoc = for {
         annotation <- tpe.typeSymbol.annotations
         if typeOf[Scaladoc] == annotation.tree.tpe
         value <- annotation.tree.children.tail.headOption
@@ -112,7 +112,7 @@ final case class DefinitionGenerator(
         doc <- ScaladocParser.parse(docString)
       } yield doc
 
-      (for {
+    (for {
         doc <- scaladoc
         paragraph <- doc.para
         term <- paragraph.terms
@@ -124,9 +124,6 @@ final case class DefinitionGenerator(
       } yield tag).map {
         case (name, term) => name -> scalaDocToMarkdown(term).toString
       }.toMap
-    } else {
-      Map.empty[String, String]
-    }
   }
 
   private def definitionForPOJO(tpe: Type): Seq[SwaggerParameter] = {
