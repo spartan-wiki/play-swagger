@@ -77,9 +77,7 @@ final case class DefinitionGenerator(
     tpe
       .decls
       .collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }
-      .toList
-      .flatMap(_.paramLists)
-      .headOption
+      .flatMap(_.paramLists.headOption)
       .getOrElse(Nil)
       .map(swaggerParam(parametricType, paramDescriptions))
   }
