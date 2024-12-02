@@ -74,14 +74,22 @@ final case class DefinitionGenerator(
 
     lazy val paramDescriptions = buildParamDescriptions(tpe)
 
-    tpe.decls.collectFirst {
-      case m: MethodSymbol if m.isPrimaryConstructor => m
-    }.toList.flatMap(_.paramLists).headOption.getOrElse(Nil).map { field =>
-      swaggerParam(parametricType, paramDescriptions, field)
-    }
+    tpe
+      .decls
+      .collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }
+      .toList
+      .flatMap(_.paramLists)
+      .headOption
+      .getOrElse(Nil)
+      .map(swaggerParam(parametricType, paramDescriptions))
   }
 
-  private def swaggerParam(parametricType: ParametricType, paramDescriptions: Map[String, String], field: Symbol) = {
+  private def swaggerParam(
+      parametricType: ParametricType,
+      paramDescriptions: Map[String, String],
+  )(
+      field: Symbol,
+  ) = {
     // TODO: find a better way to get the string representation of typeSignature
     val name = namingConvention(field.name.decodedName.toString)
 
