@@ -104,26 +104,24 @@ final case class DefinitionGenerator(
   private def buildParamDescriptions(tpe: Type): Map[String, String] = {
     if (!embedScaladoc) return Map.empty[String, String]
     val scaladoc = for {
-        annotation <- tpe.typeSymbol.annotations
-        if typeOf[Scaladoc] == annotation.tree.tpe
-        value <- annotation.tree.children.tail.headOption
-        docTree <- value.children.tail.headOption
-        docString = docTree.toString().tail.init.replace("\\n", "\n")
-        doc <- ScaladocParser.parse(docString)
-      } yield doc
+      annotation <- tpe.typeSymbol.annotations
+      if typeOf[Scaladoc] == annotation.tree.tpe
+      value <- annotation.tree.children.tail.headOption
+      docTree <- value.children.tail.headOption
+      docString = docTree.toString().tail.init.replace("\\n", "\n")
+      doc <- ScaladocParser.parse(docString)
+    } yield doc
 
     (for {
-        doc <- scaladoc
-        paragraph <- doc.para
-        term <- paragraph.terms
-        tag <- term match {
-          case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) =>
-            Some(key -> text)
-          case _ => None
-        }
-      } yield tag).map {
-        case (name, term) => name -> scalaDocToMarkdown(term).toString
-      }.toMap
+      doc <- scaladoc
+      paragraph <- doc.para
+      term <- paragraph.terms
+      (key, scalaDoc) <- term match {
+        case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) =>
+          Some(key -> text)
+        case _ => None
+      }
+    } yield key -> scalaDocToMarkdown(scalaDoc).toString).toMap
   }
 
   private def definitionForPOJO(tpe: Type): Seq[SwaggerParameter] = {
