@@ -3,7 +3,8 @@ package com.iheart.playSwagger.generator
 import scala.collection.JavaConverters
 import scala.meta.internal.parsers.ScaladocParser
 import scala.meta.internal.{Scaladoc => iScaladoc}
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.{Try => _, _}
+import scala.util.Try
 
 import com.fasterxml.jackson.databind.{BeanDescription, ObjectMapper}
 import com.github.takezoe.scaladoc.Scaladoc
@@ -106,9 +107,9 @@ final case class DefinitionGenerator(
     for {
       annotation <- tpe.typeSymbol.annotations
       if typeOf[Scaladoc] == annotation.tree.tpe
-      value <- annotation.tree.children.tail.headOption.toList
-      docTree <- value.children.tail.headOption.toList
-      docString = docTree.toString().tail.init.replace("\\n", "\n")
+      value <- Try(annotation.tree.children.tail).getOrElse(List.empty).headOption.toList
+      docTree <- Try(value.children.tail).getOrElse(List.empty).headOption.toList
+      docString = Try(docTree.toString().tail.init).getOrElse("").replace("\\n", "\n")
       doc <- ScaladocParser.parse(docString).toList
       paragraph <- doc.para
       term <- paragraph.terms
