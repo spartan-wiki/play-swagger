@@ -72,14 +72,14 @@ final case class DefinitionGenerator(
     val tpe = parametricType.tpe
     if (swaggerPlayJava) return definitionForPOJO(tpe)
 
-    lazy val paramDescriptions = buildParamDescriptions(tpe).toMap
+    lazy val paramToDescription = paramDescriptions(tpe).toMap
 
     tpe
       .decls
       .collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }
       .flatMap(_.paramLists.headOption)
       .getOrElse(Nil)
-      .map(swaggerParam(parametricType, paramDescriptions))
+      .map(swaggerParam(parametricType, paramToDescription))
   }
 
   private def swaggerParam(
@@ -101,7 +101,7 @@ final case class DefinitionGenerator(
     mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
   }
 
-  private def buildParamDescriptions(tpe: Type): List[(String, String)] = {
+  private def paramDescriptions(tpe: Type): List[(String, String)] = {
     if (!embedScaladoc) return List.empty[(String, String)]
     val scaladoc = for {
       annotation <- tpe.typeSymbol.annotations
