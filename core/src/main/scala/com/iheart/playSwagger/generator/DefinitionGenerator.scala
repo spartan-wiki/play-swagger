@@ -103,22 +103,17 @@ final case class DefinitionGenerator(
 
   private def paramDescriptions(tpe: Type): List[(String, String)] = {
     if (!embedScaladoc) return List.empty[(String, String)]
-    val scaladoc = for {
+    for {
       annotation <- tpe.typeSymbol.annotations
       if typeOf[Scaladoc] == annotation.tree.tpe
-      value <- annotation.tree.children.tail.headOption
-      docTree <- value.children.tail.headOption
+      value <- annotation.tree.children.tail.headOption.toList
+      docTree <- value.children.tail.headOption.toList
       docString = docTree.toString().tail.init.replace("\\n", "\n")
-      doc <- ScaladocParser.parse(docString)
-    } yield doc
-
-    for {
-      doc <- scaladoc
+      doc <- ScaladocParser.parse(docString).toList
       paragraph <- doc.para
       term <- paragraph.terms
       (key, scalaDoc) <- term match {
-        case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) =>
-          Some(key -> text)
+        case iScaladoc.Tag(iScaladoc.TagType.Param, Some(iScaladoc.Word(key)), Seq(text)) => Some(key -> text)
         case _ => None
       }
     } yield key -> scalaDocToMarkdown(scalaDoc).toString
