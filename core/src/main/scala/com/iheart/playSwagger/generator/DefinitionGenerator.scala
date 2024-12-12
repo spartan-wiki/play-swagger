@@ -98,7 +98,12 @@ final case class DefinitionGenerator(
     }
     val typeName = parametricType.resolve(rawTypeName)
     // passing None for 'fixed' and 'default' here, since we're not dealing with route parameters
-    val param = Parameter(name, typeName, None, None)
+    val param = Parameter(
+      name = name,
+      typeName = typeName,
+      fixed = None,
+      default = None,
+    )
     mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
   }
 
