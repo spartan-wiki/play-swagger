@@ -94,14 +94,15 @@ final case class DefinitionGenerator(
       case refinedTypePattern(_) => field.info.dealias.typeArgs.head.toString
       case v => v
     }
+    val decodedName = field.name.decodedName.toString
     // passing None for 'fixed' and 'default' here, since we're not dealing with route parameters
     val param = Parameter(
-      name = namingConvention(field.name.decodedName.toString),
+      name = namingConvention(decodedName),
       typeName = parametricType.resolve(rawTypeName),
       fixed = None,
       default = None,
     )
-    mapper.mapParam(param, paramDescriptions.get(field.name.decodedName.toString))
+    mapper.mapParam(param, paramDescriptions.get(decodedName))
   }
 
   private def paramDescriptions(tpe: Type): List[(String, String)] = {
