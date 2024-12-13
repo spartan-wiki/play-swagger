@@ -90,17 +90,17 @@ final case class DefinitionGenerator(
       field: Symbol,
   ) = {
     // TODO: find a better way to get the string representation of typeSignature
-    val dealiased = dealiasParams(field.typeSignature).toString
-    val rawTypeName = dealiased match {
+    val dealiased = dealiasParams(field.typeSignature)
+    val rawType = dealiased.toString match {
       case refinedTypePattern(_) =>
-        field.info.dealias.typeArgs.headOption.map(_.toString).getOrElse(dealiased)
+        field.info.dealias.typeArgs.headOption.getOrElse(dealiased)
       case _ => dealiased
     }
     val decodedName = field.name.decodedName.toString
     // passing None for 'fixed' and 'default' here, since we're not dealing with route parameters
     val param = Parameter(
       name = namingConvention(decodedName),
-      typeName = parametricType.resolve(rawTypeName),
+      typeName = parametricType.resolve(rawType.toString),
       fixed = None,
       default = None,
     )
